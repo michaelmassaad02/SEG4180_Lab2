@@ -6,7 +6,6 @@ import torch.nn as nn
 from torchvision import transforms
 import numpy as np
 import os
-import io
 
 load_dotenv()
 
@@ -71,14 +70,22 @@ class UNet(nn.Module):
         return self.final(u2)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = UNet().to(device)
-model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
-model.eval()
+model = None
 
 image_transform = transforms.Compose([
     transforms.Resize((256, 256)),
     transforms.ToTensor()
 ])
+
+def get_model():
+    global model
+    if model is None:
+        if not os.path.exists(MODEL_PATH):
+            raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
+        model = UNet().to(device)
+        model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+        model.eval()
+    return model
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -92,22 +99,29 @@ def predict():
     except Exception as e:
         return jsonify({"error": "Invalid image file"}), 400
     
+    try:
+        model = get_model()
+    except FileNotFoundError as e:
+        return jsonify({"error": str(e)}), 500
+
     image_tensor = image_transform(image).unsqueeze(0).to(device)
 
     with torch.no_grad():
         output = model(image_tensor)
-        pred_mask = torch.sigmoid(output)
-        pred_mask = (pred_mask > 0.5).float().squeeze().cpu().numpy()
+        probs = torch.sigmoid(output)
+        pred_mask = (probs > 0.5).float().squeeze().cpu().numpy()
 
     building_pixels = int(pred_mask.sum())
     total_pixels = int(pred_mask.size)
     building_ratio = building_pixels / total_pixels
 
     return jsonify({
+        "message": "Segmentation completed",
         "building_pixels": building_pixels,
         "total_pixels": total_pixels,
-        "building_ratio": building_ratio
+        "building_ratio": round(building_ratio, 4)
     })
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app.run(host="0.0.0.0", port=PORT)
