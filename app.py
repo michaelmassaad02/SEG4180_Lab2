@@ -87,6 +87,10 @@ def get_model():
         model.eval()
     return model
 
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({"message": "House segmentation API is running"}), 200
+
 @app.route('/predict', methods=['POST'])
 def predict():
     if "image" not in request.files:
