@@ -8,7 +8,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 COPY dataset_utils.py .
-COPY house_segmentation_model.pth .
 
 EXPOSE 5000
 
