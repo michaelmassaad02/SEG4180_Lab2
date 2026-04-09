@@ -1,5 +1,4 @@
 from datasets import load_dataset
-import numpy as np
 import matplotlib.pyplot as plt
 from dataset_utils import process_sample
 
