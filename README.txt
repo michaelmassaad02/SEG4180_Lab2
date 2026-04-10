@@ -4,42 +4,52 @@ Docker Hub Username: michaelmassaad02
 
 This lab demonstrates how to:
 
+- Implement secrets injection using environment variables and .env
+- Build a CI/CD pipeline using GitHub Actions
+- Train a UNet segmentation model for aerial building detection
+- Evaluate the model using IoU and Dice score
+- Deploy the model as a Flask API using Docker
 
+Dataset Used: 
+https://huggingface.co/datasets/keremberke/satellite-building-segmentation 
 
-Pretrained Model Link: 
-https://huggingface.co/distilbert/distilbert-base-uncased-finetuned-sst-2-english 
+Model:
 
-The API has one endpoint:
+A UNet-based segmentation model was trained using PyTorch to detect buildings in aerial images.
+The model was trained on resized images (256×256) with masks generated from bounding boxes
 
-POST /predict
+The API has two endpoint:
 
-It accepts JSON input in the following format:
+GET /
 
-{
-  "text": "Your text here"
-}
+Returns a message confirming the API is running.
 
-It returns a JSON response containing the prediction:
+POST / predict
 
-{
-  "input": "...",
-  "prediction": [
-    {
-      "label": "POSITIVE or NEGATIVE",
-      "score": probability
-    }
-  ]
-}
+Accepts an image file and returns a predicted segmentation mask.
+
+Request format (form-data):
+  Key: image
+  Type: File
+
+Response Format:
+JSON:
+  {
+  "message": "Segmentation completed",
+  "predicted_mask": "base64_encoded_image_string"
+  }
+
 
 Prerequisites:
 - Docker Desktop installed and running
+- Python (if running locally without Docker)
 
 Docker Hub Repository:
 
-https://hub.docker.com/r/michaelmassaad02/model-service
+https://hub.docker.com/r/michaelmassaad02/house-segmentation
 
 Image Name:
-michaelmassaad02/model-service:latest
+michaelmassaad02/house-segmentation:lab2
 
 
 How to run container locally:
@@ -48,11 +58,11 @@ How to run container locally:
 
 2. Pull the Docker image from Docker Hub:
 
-   docker pull michaelmassaad02/model-service:latest
+   docker pull michaelmassaad02/house-segmentation:lab2
 
 3. Run the container:
 
-   docker run -p 5000:5000 michaelmassaad02/model-service:latest
+   docker run -p 5000:5000 michaelmassaad02/house-segmentation:lab2
 
 4. The application will start and listen on:
 
@@ -60,24 +70,43 @@ How to run container locally:
 
 How to test:
 
-Using PowerShell (Windows):
+Using Postman:
 
+- Method: POST
+- URL: http://localhost:5000/predict
+- Body -> form-data
+- Key: image (file)
+- Upload an image and send the request
+
+PowerShell (Windows):
 Invoke-RestMethod -Method POST http://localhost:5000/predict `
--Headers @{"Content-Type"="application/json"} `
--Body '{"text":"Docker is working!"}'
+-Form @{image=Get-Item "test_image.png"}
 
 Using curl (Mac/Linux):
-
 curl -X POST http://localhost:5000/predict \
--H "Content-Type: application/json" \
--d '{"text":"Docker is working!"}'
+-F "image=@test_image.png"
 
 Files included in submission:
 - app.py
+- .github\workflows\ci.yml
+- model.py
+- .env
+- .gitignore
+- dataset_utils.py
+- prepare_dataset.py
+- train_model.py
+- evaluate_model.py
+- tests\test_app.py
 - Dockerfile
 - requirements.txt
-- README.txt
-- SEG4180_Lab1_APIRunningLocally.png (Screenshot)
-- SEG4180_Lab1_DockerHubRepoWithPushedImage.png (Screenshot)
-- SEG4180_Lab1_DockerHubRepoWithPushedImage2.png (Screenshot)
-- SEG4180_Lab1_DockerRunningAPI.png (Screenshot)
+- house_segmentation_model.pth
+- loss_curve.png
+- prediction_example_1.png
+- prediction_example_2.png
+- prediction_example_3.png
+- prediction_example_4.png
+- prediction_example_5.png
+- app_test_postman.png
+- CI-CD_Pipeline_Runs.png
+- model_evaluation.png
+- model_training.png
